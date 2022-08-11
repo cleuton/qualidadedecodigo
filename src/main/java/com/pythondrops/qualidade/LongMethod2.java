@@ -6,27 +6,25 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class LongMethod {
+public class LongMethod2 {
     public static Logger logger = Logger.getGlobal();
 
-
+/*
+Primeiro refactoring: Removendo código duplicado: Logger
+ */
 
     private boolean obterStatus (Transacao tr) throws Exception {
         long start_time = System.nanoTime();
-        long tId = Thread.currentThread().getId();
         String thx = QueueProcessMgmt.getThsx();
         if (thx!=null) {
-            logger.log(Level.INFO,"Inicio: " + thx + " thread Id: " + tId + " tempo: " + 0);
+            logMsg(Level.INFO, "Inicio: ", start_time);
         }
         if (tr.isOpen()) {
             if(thx==null)
                 throw new Exception();
             ClFin c = ClienteRepo.getRefreshCliente(tr.getCliId());
             if (c==null) {
-                long evTime = System.nanoTime();
-                long difTime = evTime - start_time;
-                thx = QueueProcessMgmt.getThsx();
-                logger.log(Level.SEVERE,"Err cli update: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+                logMsg(Level.SEVERE, "Err cli update: ", start_time);
                 throw new Exception();
             }
             boolean ctem = false;
@@ -38,55 +36,41 @@ public class LongMethod {
                 }
             }
             if (ctem) {
-                long evTime = System.nanoTime();
-                long difTime = evTime - start_time;
-                thx = QueueProcessMgmt.getThsx();
-                logger.log(Level.INFO,"cli tem trx: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+                logMsg(Level.INFO,"cli tem trx: ", start_time);
                 tr.listSt.add((new Date()) + " acesso ");
                 boolean stUtr = TxRepo.update(tr);
                 if (!stUtr) {
-                    evTime = System.nanoTime();
-                    difTime = evTime - start_time;
-                    thx = QueueProcessMgmt.getThsx();
-                    logger.log(Level.SEVERE,"erro updtx: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+                    logMsg(Level.SEVERE, "erro updtx: ", start_time);
                     throw new Exception();
                 }
                 return true;
             }
-            long evTime = System.nanoTime();
-            long difTime = evTime - start_time;
-            thx = QueueProcessMgmt.getThsx();
-            logger.log(Level.INFO,"cli nao tem trx: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+            logMsg(Level.INFO, "cli nao tem trx: ", start_time);
             tr.listSt.add((new Date()) + " adicionada ");
             boolean stUtr = TxRepo.update(tr);
             if (!stUtr) {
-                evTime = System.nanoTime();
-                difTime = evTime - start_time;
-                thx = QueueProcessMgmt.getThsx();
-                logger.log(Level.SEVERE,"erro updtx: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+                logMsg(Level.SEVERE, "erro updtx: ", start_time);
                 throw new Exception();
             }
             c.trans.add(tr);
             boolean bz = ClienteRepo.updC(c);
             if (!bz) {
-                evTime = System.nanoTime();
-                difTime = evTime - start_time;
-                thx = QueueProcessMgmt.getThsx();
-                logger.log(Level.SEVERE,"erro updc: " + thx + " thread Id: " + tId + " tempo: " + difTime);
+                logMsg(Level.SEVERE, "erro updc: ", start_time);
                 throw new Exception();
             }
             return false;
         }
-        long evTime = System.nanoTime();
-        long difTime = evTime - start_time;
-        thx = QueueProcessMgmt.getThsx();
-        logger.log(Level.SEVERE,"tr not open " + thx + " thread Id: " + tId + " tempo: " + difTime);
+        logMsg(Level.SEVERE,"tr not open ", start_time);
         return false;
     }
 
-
-
-
+    private void logMsg(Level nivel, String mensagem, long inicio) {
+        long tId = Thread.currentThread().getId();
+        long evTime = System.nanoTime();
+        long difTime = evTime - inicio;
+        String thx = QueueProcessMgmt.getThsx();
+        logger.log(nivel, String.format("%s %d thread Id: %d tempo: %d",thx,tId,difTime));
+    }
 
 
     // Fake classes and methods to support above method......
